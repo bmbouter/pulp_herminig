@@ -3,9 +3,10 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from pulpcore.plugin.models import Task, TaskGroup
 from pulpcore.plugin.serializers import AsyncOperationResponseSerializer
-from pulpcore.plugin.viewsets import OperationPostponedResponse
 from pulpcore.plugin.tasking import dispatch
+from pulpcore.plugin.viewsets import OperationPostponedResponse
 
 from . import models, serializers, tasks
 
@@ -30,11 +31,15 @@ class TaskingBenchmarkView(APIView):
             task = dispatch(tasks.benchmark_tasking, ["benchmark_tasking"], kwargs={"count": count})
             return OperationPostponedResponse(task, request)
         else:
+            prior_tasks = Task.objects.count()
+            task_group = TaskGroup(description="Tasking system benchmark tasks")
+            task_group.save()
             before = time.perf_counter_ns()
             for i in range(count):
-                dispatch(tasks.noop, [])
+                dispatch(tasks.noop, [], task_group=task_group)
             after = time.perf_counter_ns()
+            task_group.finish()
 
-            benchmark_result = models.TaskingBenchmarkResult(count, after - before)
-            response_serializer = serializers.TaskingBenchmarkResultSerializer(benchmark_result)
+            benchmark_result = models.TaskingBenchmarkResult(count, after - before, prior_tasks, task_group)
+            response_serializer = serializers.TaskingBenchmarkResultSerializer(benchmark_result, context={"request": request})
             return Response(data=response_serializer.data, status=200)
