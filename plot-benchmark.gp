@@ -40,3 +40,5 @@ do for [t=0:6] {
     exp(g2(log(x))) axes x1y1 notitle ls 3, \
     exp(f2(log(x))) axes x1y2 notitle ls 4
 }
+
+unset multiplot
