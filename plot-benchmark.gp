@@ -14,8 +14,10 @@ set ytics nomirror
 set y2tics nomirror
 set style data points
 
-f(x) = a + b * x
-g(x) = c + d * x
+f1(x) = a1 + b1 * x
+g1(x) = c1 + d1 * x
+f2(x) = a2 + b2 * x
+g2(x) = c2 + d2 * x
 
 set multiplot layout 3, 3
 
@@ -23,14 +25,18 @@ do for [t=0:6] {
   N = 2**t
   set title sprintf("%d workers", N)
 
-  fit f(x) 'workers-old.data' u ($6==N?log($1):NaN):(log($5)) via a, b
-  fit g(x) 'workers-new.data' u ($6==N?log($1):NaN):(log($5)) via c, d
+  fit f1(x) 'workers-old.data' u ($6==N?log($1):NaN):(log($5)) via a1, b1
+  fit f2(x) 'workers-new.data' u ($6==N?log($1):NaN):(log($5)) via a2, b2
+  fit g1(x) 'workers-old.data' u ($6==N?log($1):NaN):(log($2*1e-9/$1)) via c1, d1
+  fit g2(x) 'workers-new.data' u ($6==N?log($1):NaN):(log($2*1e-9/$1)) via c2, d2
 
   plot \
     'workers-old.data' u ($6==N?$1:NaN):($2*1e-9/$1) axes x1y1 title "old avg dispatch time", \
     '' u ($6==N?$1:NaN):5 axes x1y2 title "old avg time in system", \
-    exp(f(log(x))) axes x1y2 title "fit", \
     'workers-new.data' u ($6==N?$1:NaN):($2*1e-9/$1) axes x1y1 title "new avg dispatch time", \
     '' u ($6==N?$1:NaN):5 axes x1y2 title "new avg time in system", \
-    exp(g(log(x))) axes x1y2 title "fit"
+    exp(g1(log(x))) axes x1y1 notitle ls 1, \
+    exp(f1(log(x))) axes x1y2 notitle ls 2, \
+    exp(g2(log(x))) axes x1y1 notitle ls 3, \
+    exp(f2(log(x))) axes x1y2 notitle ls 4
 }
