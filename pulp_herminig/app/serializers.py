@@ -1,11 +1,12 @@
 from gettext import gettext as _
-from rest_framework.serializers import Serializer, IntegerField, BooleanField
 
 from pulpcore.plugin.serializers import RelatedField
+from rest_framework.serializers import BooleanField, IntegerField, Serializer
 
 
 class TaskingBenchmarkSerializer(Serializer):
     background = BooleanField(default=False)
+    truncate_tasks = BooleanField(default=False)
     count = IntegerField(default=4)
 
 

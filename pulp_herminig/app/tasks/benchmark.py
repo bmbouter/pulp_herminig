@@ -4,7 +4,6 @@ import time
 from pulpcore.plugin.models import Task
 from pulpcore.plugin.tasking import dispatch
 
-
 log = logging.getLogger(__name__)
 
 

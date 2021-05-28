@@ -1,12 +1,13 @@
 import time
-from drf_spectacular.utils import extend_schema
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from drf_spectacular.utils import extend_schema
+from pulpcore.plugin.constants import TASK_FINAL_STATES
 from pulpcore.plugin.models import Task, TaskGroup
 from pulpcore.plugin.serializers import AsyncOperationResponseSerializer
 from pulpcore.plugin.tasking import dispatch
 from pulpcore.plugin.viewsets import OperationPostponedResponse
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from . import models, serializers, tasks
 
@@ -26,11 +27,14 @@ class TaskingBenchmarkView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         background = serializer.validated_data["background"]
+        truncate_tasks = serializer.validated_data["truncate_tasks"]
         count = serializer.validated_data["count"]
         if background:
             task = dispatch(tasks.benchmark_tasking, ["benchmark_tasking"], kwargs={"count": count})
             return OperationPostponedResponse(task, request)
         else:
+            if truncate_tasks:
+                Task.objects.filter(state_in=TASK_FINAL_STATES).delete()
             prior_tasks = Task.objects.count()
             task_group = TaskGroup(description="Tasking system benchmark tasks")
             task_group.save()
@@ -40,6 +44,10 @@ class TaskingBenchmarkView(APIView):
             after = time.perf_counter_ns()
             task_group.finish()
 
-            benchmark_result = models.TaskingBenchmarkResult(count, after - before, prior_tasks, task_group)
-            response_serializer = serializers.TaskingBenchmarkResultSerializer(benchmark_result, context={"request": request})
+            benchmark_result = models.TaskingBenchmarkResult(
+                count, after - before, prior_tasks, task_group
+            )
+            response_serializer = serializers.TaskingBenchmarkResultSerializer(
+                benchmark_result, context={"request": request}
+            )
             return Response(data=response_serializer.data, status=200)
