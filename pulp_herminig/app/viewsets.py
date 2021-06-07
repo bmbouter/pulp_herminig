@@ -1,4 +1,6 @@
+import random
 import time
+import uuid
 
 from drf_spectacular.utils import extend_schema
 from pulpcore.plugin.constants import TASK_FINAL_STATES
@@ -29,6 +31,8 @@ class TaskingBenchmarkView(APIView):
         background = serializer.validated_data["background"]
         truncate_tasks = serializer.validated_data["truncate_tasks"]
         count = serializer.validated_data["count"]
+        resources = [str(uuid.uuid4()) for i in range(serializer.validated_data["resources_N"])]
+        resources_K = serializer.validated_data["resources_K"]
         if background:
             task = dispatch(tasks.benchmark_tasking, ["benchmark_tasking"], kwargs={"count": count})
             return OperationPostponedResponse(task, request)
@@ -40,7 +44,7 @@ class TaskingBenchmarkView(APIView):
             task_group.save()
             before = time.perf_counter_ns()
             for i in range(count):
-                dispatch(tasks.noop, [], task_group=task_group)
+                dispatch(tasks.noop, random.choices(resources, k=resources_K), task_group=task_group)
             after = time.perf_counter_ns()
             task_group.finish()
 
