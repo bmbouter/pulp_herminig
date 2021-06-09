@@ -5,7 +5,6 @@ from rest_framework.serializers import BooleanField, IntegerField, Serializer, V
 
 
 class TaskingBenchmarkSerializer(Serializer):
-    background = BooleanField(default=False)
     truncate_tasks = BooleanField(default=False)
     count = IntegerField(default=4)
     resources_N = IntegerField(default=0)
